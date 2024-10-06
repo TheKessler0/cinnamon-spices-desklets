@@ -584,7 +584,7 @@ SystemMonitorGraph.prototype = {
 
     get_amd_gpu_mem: function() {
         let subprocess = Gio.Subprocess.new(
-            ['/usr/bin/rocm-smi', '--showmeminfo' + 'vram', '--csv', '-d' + this.gpu_id],
+            ['/usr/bin/rocm-smi', '--showmeminfo vram', '--csv', '-d' + this.gpu_id],
             Gio.SubprocessFlags.STDOUT_PIPE|Gio.SubprocessFlags.STDERR_PIPE
         );
         subprocess.communicate_utf8_async(null, null, (subprocess, result) => {
