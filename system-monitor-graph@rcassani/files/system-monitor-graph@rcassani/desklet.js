@@ -573,18 +573,18 @@ SystemMonitorGraph.prototype = {
       
      get_amd_gpu_use: function() {
         let subprocess = Gio.Subprocess.new(
-            ['/usr/bin/radeontop', '-l 1', '-d -', '-b ' + this.gpu_id],
+            ['/usr/bin/rocm-smi', '--showuse', '--csv', '-d' + this.gpu_id],
             Gio.SubprocessFlags.STDOUT_PIPE|Gio.SubprocessFlags.STDERR_PIPE
         );
         subprocess.communicate_utf8_async(null, null, (subprocess, result) => {
             let [, stdout, stderr] = subprocess.communicate_utf8_finish(result);
-            this.gpu_use =  parseInt(stdout.match(/gpu\s([\d.]+)%/i)[1]);
+            this.gpu_use =  parseInt(stdout.match(/\d*$/)[1]);
         });
     },
 
     get_amd_gpu_mem: function() {
         let subprocess = Gio.Subprocess.new(
-            ['/usr/bin/radeontop', '-l 1', '-d -', '-b ' + this.gpu_id],
+            ['/usr/bin/rocm-smi', '--showmeminfo' + 'vram', '--csv', '-d' + this.gpu_id],
             Gio.SubprocessFlags.STDOUT_PIPE|Gio.SubprocessFlags.STDERR_PIPE
         );
         subprocess.communicate_utf8_async(null, null, (subprocess, result) => {
@@ -595,12 +595,12 @@ SystemMonitorGraph.prototype = {
             let mem_usd
             if (this.data_prefix_gpumem == 1) {
                 // decimal prefix
-                mem_tot =  parseInt(items[0]) * 1024 * 1024 / GB_TO_B;
-                mem_usd =  parseInt(items[1]) * 1024 * 1024 / GB_TO_B;
+                mem_tot =  parseInt(items[1]) * 1024 * 1024 / GB_TO_B;
+                mem_usd =  parseInt(items[2]) * 1024 * 1024 / GB_TO_B;
             } else {
                 // binary prefix
-                mem_tot =  parseInt(items[0]) / GIB_TO_MIB;
-                mem_usd =  parseInt(items[1]) / GIB_TO_MIB;
+                mem_tot =  parseInt(items[1]) / GIB_TO_MIB;
+                mem_usd =  parseInt(items[2]) / GIB_TO_MIB;
             }
             this.gpu_mem[0] = mem_tot;
             this.gpu_mem[1] = mem_usd;
