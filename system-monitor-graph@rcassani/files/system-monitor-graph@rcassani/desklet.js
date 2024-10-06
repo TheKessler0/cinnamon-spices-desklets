@@ -252,6 +252,34 @@ SystemMonitorGraph.prototype = {
                     }
                     break;
 
+                case "amd":
+                    switch (this.gpu_variable) {
+                        case "usage":
+                            this.get_amd_gpu_use();
+                            value = this.gpu_use / 100;
+                            text1 = _("GPU Usage");
+                            text2 = Math.round(this.gpu_use).toString() + "%";
+                            break;
+                        case "memory":
+                            this.get_amd_gpu_mem();
+                            let gpu_mem_use = 100 * this.gpu_mem[1] / this.gpu_mem[0];
+                            value = gpu_mem_use / 100;
+                            let gpumem_prefix = "";
+                            if (this.data_prefix_gpumem == 1) {
+                                // decimal prefix
+                                gpumem_prefix =  _("GB");
+                            } else {
+                                // binary prefix
+                                gpumem_prefix =  _("GiB");
+                            }
+                            text1 = _("GPU Memory");
+                            text2 = Math.round(gpu_mem_use).toString() + "%"
+                            text3 = this.gpu_mem[1].toFixed(1) + " / "
+                                  + this.gpu_mem[0].toFixed(1) + " " + gpumem_prefix;
+                            break;
+                    }
+                    break;
+                  
                 case "other":
                     break
               }
@@ -541,6 +569,43 @@ SystemMonitorGraph.prototype = {
             this.gpu_mem[0] = mem_tot;
             this.gpu_mem[1] = mem_usd;
         });
+    },
+      
+     get_amd_gpu_use: function() {
+        let subprocess = Gio.Subprocess.new(
+            ['/usr/bin/radeontop', '-l 1', '-d -', '-b ' + this.gpu_id],
+            Gio.SubprocessFlags.STDOUT_PIPE|Gio.SubprocessFlags.STDERR_PIPE
+        );
+        subprocess.communicate_utf8_async(null, null, (subprocess, result) => {
+            let [, stdout, stderr] = subprocess.communicate_utf8_finish(result);
+            this.gpu_use =  parseInt(stdout.match(/gpu\s([\d.]+)%/i)[1]);
+        });
+    },
+
+    get_amd_gpu_mem: function() {
+        let subprocess = Gio.Subprocess.new(
+            ['/usr/bin/radeontop', '-l 1', '-d -', '-b ' + this.gpu_id],
+            Gio.SubprocessFlags.STDOUT_PIPE|Gio.SubprocessFlags.STDERR_PIPE
+        );
+        subprocess.communicate_utf8_async(null, null, (subprocess, result) => {
+            let [, stdout, stderr] = subprocess.communicate_utf8_finish(result);
+            let fslines = stdout.split(/\r?\n/); // Line0:Headers Line1:Values
+            let items = fslines[1].split(',');   // Values are comma-separated
+            let mem_tot
+            let mem_usd
+            if (this.data_prefix_gpumem == 1) {
+                // decimal prefix
+                mem_tot =  parseInt(items[0]) * 1024 * 1024 / GB_TO_B;
+                mem_usd =  parseInt(items[1]) * 1024 * 1024 / GB_TO_B;
+            } else {
+                // binary prefix
+                mem_tot =  parseInt(items[0]) / GIB_TO_MIB;
+                mem_usd =  parseInt(items[1]) / GIB_TO_MIB;
+            }
+            this.gpu_mem[0] = mem_tot;
+            this.gpu_mem[1] = mem_usd;
+        });
+      
     }
 
 };
