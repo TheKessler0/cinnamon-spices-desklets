@@ -578,7 +578,7 @@ SystemMonitorGraph.prototype = {
         );
         subprocess.communicate_utf8_async(null, null, (subprocess, result) => {
             let [, stdout, stderr] = subprocess.communicate_utf8_finish(result);
-            this.gpu_use =  parseInt(stdout.match(/\d*$/)[0]);
+            this.gpu_use =  parseInt(stdout.match(/\d*/)[1]);
         });
     },
 
